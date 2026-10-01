@@ -2,3 +2,4 @@
 /.truenas-apps/
 __pycache__/
 /ix-dev/**/templates/rendered/
+/test-install.yaml
