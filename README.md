@@ -27,7 +27,7 @@ Until then, `truenas.compose.yaml` in the plMail repository remains the way to i
 
 | Setting | Default | |
 |---|---|---|
-| **plMail Data Storage** | Host Path, required | The one dataset. Database, attachments, raw mail, uploads and the generated secrets all live in it. ixVolume is the alternative if you would rather not pick one. |
+| **plMail Data Storage** | ixVolume | Database, attachments, raw mail, uploads and the generated secrets all live in it. Nothing has to be entered. To keep it in a dataset of your own, switch to Host Path; that one path is then the only required field. |
 | WebUI Port | `30504` | Any port, or bind mode *None* when using a dedicated IP. |
 | Networks | none | Join the `plmail` container to an existing macvlan/ipvlan network and set its IPv4 address to give plMail its own IP. It then answers on port 80 of that address. |
 | Timezone, Additional Environment Variables, Labels, Resources | | Standard catalog fields. Nothing needs filling in. |
@@ -37,15 +37,17 @@ start, as in `truenas.compose.yaml`. The directory layout is the same, so
 pointing the data storage at the directory of an install made from that file should adopt
 it; that path has not been tested.
 
-Additional environment variables go to the web container and every worker. They may
+Additional environment variables go to the web and the worker container. They may
 replace `APP_PUBLIC_URL`, `MERCURE_PUBLIC_URL`, `TRUSTED_PROXIES`, `VAPID_*`,
 `GOOGLE_OAUTH_*`, `GMAIL_PUBSUB_*`, `MICROSOFT_OAUTH_*` and `MAILER_DSN`.
 
 ## Differences from truenas.compose.yaml
 
-- Images are pinned by tag and digest (`ix_values.yaml`); the catalog does not use `latest`.
-- Mercure is pinned to `v0.24.2`. Mercure 1.0 dropped `/healthz` and changed how JWT keys
-  are configured, so the unpinned `dunglas/mercure` no longer comes up healthy.
+Same four services: `secrets-init`, the web container (`plmail`), `worker` (queues,
+scheduler, IMAP supervisor and the Mercure hub, reachable as `mercure`) and `database`.
+
+- Images are referenced by tag and digest (`ix_values.yaml`); the catalog does not use
+  `latest`. Renovate moves them forward in `truenas/apps`.
 - Containers drop all capabilities and get back only what they use (see `app.yaml`).
 - The Postgres directory is chowned to uid 70, the `postgres` user of the alpine image.
 

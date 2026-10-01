@@ -5,25 +5,24 @@
 {# Mints the generated secrets and lays out the data directory, then exits. #}
 {% set secrets = tpl.add_container(values.consts.secrets_container_name, "image") %}
 {% set web = tpl.add_container(values.consts.plmail_container_name, "image") %}
-{% set imap = tpl.add_container(values.consts.imap_container_name, "image") %}
-{% set worker_export = tpl.add_container(values.consts.worker_export_container_name, "image") %}
-{% set worker_ingest = tpl.add_container(values.consts.worker_ingest_container_name, "image") %}
-{% set worker_maintenance = tpl.add_container(values.consts.worker_maintenance_container_name, "image") %}
-{% set scheduler = tpl.add_container(values.consts.scheduler_container_name, "image") %}
+{# Everything that is not the web server: the IMAP supervisor, one consumer per
+   queue, the scheduler and the Mercure hub, kept running by app:work. #}
+{% set worker = tpl.add_container(values.consts.worker_container_name, "image") %}
 {% set postgres = tpl.add_container(values.consts.postgres_container_name, "postgres_image") %}
-{% set mercure = tpl.add_container(values.consts.mercure_container_name, "mercure_image") %}
 
-{% set workers = [imap, worker_export, worker_ingest, worker_maintenance, scheduler] %}
-{% set app_containers = [web] + workers %}
+{% set app_containers = [web, worker] %}
 
 {% set secrets_dir = "%s/secrets"|format(values.consts.data_path) %}
 
-{# The whole install is this one storage: postgres, attachments, raw, uploads, secrets. #}
-{% set shared_ro = dict(values.storage.data, **{"read_only": true}) %}
-
-{% for c in [secrets, postgres, mercure] + app_containers %}
+{% for c in [secrets, postgres, web] %}
   {% do c.add_network(plmail_net) %}
-  {# Every image here starts as root. #}
+{% endfor %}
+{# The worker runs the hub, so it answers to the name the web container's
+   proxy and MERCURE_URL look for. #}
+{% do worker.add_network(plmail_net, {"aliases": [values.consts.mercure_alias]}) %}
+
+{# Every image here starts as root. #}
+{% for c in [secrets, postgres] + app_containers %}
   {% do c.set_user(0, 0) %}
 {% endfor %}
 
@@ -45,7 +44,7 @@ exec generate-secrets
 {% do secrets.environment.add_env("APP_SECRETS_DIR", secrets_dir) %}
 {% do secrets.add_storage(values.consts.data_path, values.storage.data) %}
 
-{# -- plMail image: web, imap supervisor, workers, scheduler -- #}
+{# -- plMail image: web and worker -- #}
 {# Defaults the user may replace through Additional Environment Variables.
    Blank is deliberate: it is what makes plMail generate the value, or ask
    for it on the setup screen, instead of using the image's placeholder. #}
@@ -70,7 +69,6 @@ exec generate-secrets
 {% for c in app_containers %}
   {% do c.add_caps(["CHOWN", "DAC_OVERRIDE", "FOWNER"]) %}
   {% do c.environment.add_env("APP_ENV", "prod") %}
-  {% do c.environment.add_env("APP_CONTAINER_NAME", "web" if c == web else c.name()) %}
   {% do c.environment.add_env("APP_STORAGE_DIR", "var/data") %}
   {% do c.environment.add_env("APP_SECRETS_DIR", secrets_dir) %}
   {% do c.environment.add_env("APP_SECRETS_FILE", "%s/generated.env"|format(secrets_dir)) %}
@@ -83,7 +81,7 @@ exec generate-secrets
   {% do c.environment.add_env("POSTGRES_USER", values.consts.db_user) %}
   {% do c.environment.add_env("POSTGRES_DB", values.consts.db_name) %}
   {% do c.environment.add_env("MESSENGER_TRANSPORT_DSN", "doctrine://default?auto_setup=0") %}
-  {% do c.environment.add_env("MERCURE_URL", "http://%s/.well-known/mercure"|format(values.consts.mercure_container_name)) %}
+  {% do c.environment.add_env("MERCURE_URL", "http://%s/.well-known/mercure"|format(values.consts.mercure_alias)) %}
   {% for name, value in overridable_envs.items() %}
     {% if name not in user_env_names %}
       {% do c.environment.add_env(name, value) %}
@@ -98,33 +96,27 @@ exec generate-secrets
 
 {# Plain HTTP on :80, TLS belongs to the reverse proxy in front. #}
 {% do web.add_caps(["NET_BIND_SERVICE"]) %}
+{% do web.environment.add_env("APP_CONTAINER_NAME", "web") %}
 {% do web.environment.add_env("SERVER_NAME", ":%d"|format(values.consts.internal_http_port)) %}
 {% do web.healthcheck.set_test("curl", {"port": values.consts.internal_http_port, "path": "/healthz"}) %}
 {# Migrations run before the server answers. #}
 {% do web.healthcheck.set_start_period(120) %}
-{% do web.depends.add_dependency(values.consts.mercure_container_name, "service_healthy") %}
 {% do web.add_storage("/data", {"type": "volume", "volume_config": {"volume_name": "caddy-data"}}) %}
 {% do web.add_storage("/config", {"type": "volume", "volume_config": {"volume_name": "caddy-config"}}) %}
 {% do web.add_port(values.network.web_port, {"container_port": values.consts.internal_http_port}) %}
 
-{# The workers have no HTTP server; their liveness is reported through heartbeats. #}
-{% for c in workers %}
-  {% do c.healthcheck.disable() %}
-{% endfor %}
-
-{% do imap.set_command(["php", "bin/console", "app:imap:supervise"]) %}
-{% do imap.set_grace_period(30) %}
-
-{% set queues = [
-  (worker_export, ["export"]),
-  (worker_ingest, ["ingest"]),
-  (worker_maintenance, ["maintenance", "async"]),
-  (scheduler, ["scheduler_default"]),
-] %}
-{% for c, names in queues %}
-  {% do c.set_command(["php", "bin/console", "messenger:consume"] + names + ["--time-limit=3600", "--memory-limit=256M"]) %}
-  {% do c.set_grace_period(15) %}
-{% endfor %}
+{# The hub listens on :80 inside the worker. #}
+{% do worker.add_caps(["NET_BIND_SERVICE"]) %}
+{% do worker.environment.add_env("APP_CONTAINER_NAME", "worker") %}
+{% do worker.set_command(["php", "bin/console", "app:work"]) %}
+{# Reaps the IMAP supervisor's children should it die hard. #}
+{% do worker.set_init(true) %}
+{# Longer than the 25s app:work gives every process to finish the message in hand. #}
+{% do worker.set_grace_period(30) %}
+{# No HTTP server of its own to probe; liveness reaches /healthz through heartbeats. #}
+{% do worker.healthcheck.disable() %}
+{% do worker.add_storage("/data", {"type": "volume", "volume_config": {"volume_name": "mercure-data"}}) %}
+{% do worker.add_storage("/config", {"type": "volume", "volume_config": {"volume_name": "mercure-config"}}) %}
 
 {# -- database -- #}
 {# Not tpl.deps.postgres: that needs the password at render time, and this one
@@ -145,27 +137,6 @@ exec generate-secrets
 {% do postgres.healthcheck.set_start_period(60) %}
 {% do postgres.depends.add_dependency(values.consts.secrets_container_name, "service_completed_successfully") %}
 {% do postgres.add_storage(values.consts.shared_path, values.storage.data) %}
-
-{# -- mercure -- #}
-{% do mercure.remove_devices() %}
-{% do mercure.add_caps(["DAC_OVERRIDE", "NET_BIND_SERVICE"]) %}
-{# The hub image has no _FILE support, so the generated secret is read in a
-   shell before Caddy starts. #}
-{% do mercure.set_entrypoint(["/bin/sh", "-c", "
-MERCURE_JWT_SECRET=\"$(sed -n 's/^MERCURE_JWT_SECRET=//p' %s/secrets/generated.env)\"
-export MERCURE_PUBLISHER_JWT_KEY=\"$MERCURE_JWT_SECRET\"
-export MERCURE_SUBSCRIBER_JWT_KEY=\"$MERCURE_JWT_SECRET\"
-exec \"$@\"
-"|format(values.consts.shared_path), "--"]) %}
-{# The image's default Caddyfile: the dev one accepts subscribers without a JWT. #}
-{% do mercure.set_command(["/usr/bin/caddy", "run", "--config", "/etc/caddy/Caddyfile"]) %}
-{% do mercure.environment.add_env("SERVER_NAME", ":%d"|format(values.consts.internal_http_port)) %}
-{% do mercure.healthcheck.set_test("curl", {"port": values.consts.internal_http_port, "path": "/healthz"}) %}
-{% do mercure.healthcheck.set_start_period(60) %}
-{% do mercure.depends.add_dependency(values.consts.secrets_container_name, "service_completed_successfully") %}
-{% do mercure.add_storage(values.consts.shared_path, shared_ro) %}
-{% do mercure.add_storage("/data", {"type": "volume", "volume_config": {"volume_name": "mercure-data"}}) %}
-{% do mercure.add_storage("/config", {"type": "volume", "volume_config": {"volume_name": "mercure-config"}}) %}
 
 {% do tpl.portals.add(values.network.web_port) %}
 

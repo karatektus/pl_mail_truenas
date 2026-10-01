@@ -148,20 +148,10 @@ questions:
                                     enum:
                                       - value: plmail
                                         description: plmail
-                                      - value: imap-supervisor
-                                        description: imap-supervisor
-                                      - value: worker-export
-                                        description: worker-export
-                                      - value: worker-ingest
-                                        description: worker-ingest
-                                      - value: worker-maintenance
-                                        description: worker-maintenance
-                                      - value: scheduler
-                                        description: scheduler
+                                      - value: worker
+                                        description: worker
                                       - value: database
                                         description: database
-                                      - value: mercure
-                                        description: mercure
                                 - variable: config
                                   label: Container Network Configuration
                                   schema:
@@ -222,7 +212,8 @@ questions:
           description: |
             The one place plMail stores everything: the database, attachments,</br>
             raw messages, uploads and the generated secrets.</br>
-            Use a dataset of its own so it can be snapshotted and backed up.
+            To keep it in a dataset of your own, choose Host Path and select it.</br>
+            That path is the only one plMail needs.
           schema:
             type: dict
             attrs:
@@ -234,7 +225,7 @@ questions:
                 schema:
                   type: string
                   required: true
-                  default: "host_path"
+                  default: "ix_volume"
                   enum:
                     - value: "host_path"
                       description: Host Path (Path that already exists on the system)
@@ -333,20 +324,10 @@ questions:
                         enum:
                           - value: plmail
                             description: plmail
-                          - value: imap-supervisor
-                            description: imap-supervisor
-                          - value: worker-export
-                            description: worker-export
-                          - value: worker-ingest
-                            description: worker-ingest
-                          - value: worker-maintenance
-                            description: worker-maintenance
-                          - value: scheduler
-                            description: scheduler
+                          - value: worker
+                            description: worker
                           - value: database
                             description: database
-                          - value: mercure
-                            description: mercure
 
   - variable: resources
     label: ""
