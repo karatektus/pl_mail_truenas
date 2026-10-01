@@ -1,0 +1,4 @@
+.DS_Store
+/.truenas-apps/
+__pycache__/
+/ix-dev/**/templates/rendered/

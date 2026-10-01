@@ -1,0 +1,14 @@
+categories:
+- productivity
+icon_url: https://raw.githubusercontent.com/karatektus/pl_mail/main/public/icons/icon-512.png
+screenshots:
+- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/inbox.png
+- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/thread.png
+- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/compose.png
+- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/calendar.png
+tags:
+- mail
+- email
+- webmail
+- imap
+- calendar

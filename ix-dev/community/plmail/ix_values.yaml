@@ -1,0 +1,33 @@
+images:
+  image:
+    repository: ghcr.io/karatektus/pl_mail
+    tag: "0.2.53@sha256:278e28cd7c5e0d94ea9092bd2050392103d0a53d8e7cd0e285e818b8474b42f2"
+  postgres_image:
+    repository: postgres
+    tag: "18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873"
+  mercure_image:
+    repository: dunglas/mercure
+    tag: "v0.24.2@sha256:916834e499613d475e9ad5118cd2349875338f52d99d65b58aeff82f97ccb0c6"
+
+consts:
+  plmail_container_name: plmail
+  secrets_container_name: secrets-init
+  imap_container_name: imap-supervisor
+  worker_export_container_name: worker-export
+  worker_ingest_container_name: worker-ingest
+  worker_maintenance_container_name: worker-maintenance
+  scheduler_container_name: scheduler
+  # The image reaches these two by name: POSTGRES_HOST defaults to "database"
+  # and the bundled Caddyfile proxies /.well-known/mercure to "mercure:80".
+  postgres_container_name: database
+  mercure_container_name: mercure
+  internal_http_port: 80
+  # Everything plMail writes lives under this one mount.
+  data_path: /app/var/data
+  # Same directory, as the database and the hub see it.
+  shared_path: /plmail
+  db_user: app
+  db_name: app
+  # uid/gid of the postgres user in the alpine image.
+  postgres_uid: 70
+  postgres_gid: 70

@@ -1,0 +1,17 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        values: [basic-values.yaml, hostpath-values.yaml]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render, deploy and wait for healthy
+        run: TEST_FILE=${{ matrix.values }} scripts/test.sh
