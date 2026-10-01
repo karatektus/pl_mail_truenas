@@ -33,8 +33,9 @@ Until then, `truenas.compose.yaml` in the plMail repository remains the way to i
 | Timezone, Additional Environment Variables, Labels, Resources | | Standard catalog fields. Nothing needs filling in. |
 
 Secrets are not asked for. `secrets-init` generates them into `<data>/secrets` on first
-start, as in `truenas.compose.yaml`. An install made from that file can be adopted by
-pointing the data storage at the same directory.
+start, as in `truenas.compose.yaml`. The directory layout is the same, so
+pointing the data storage at the directory of an install made from that file should adopt
+it; that path has not been tested.
 
 Additional environment variables go to the web container and every worker. They may
 replace `APP_PUBLIC_URL`, `MERCURE_PUBLIC_URL`, `TRUSTED_PROXIES`, `VAPID_*`,
@@ -56,8 +57,10 @@ scripts/test.sh
 
 Clones `truenas/apps` into `.truenas-apps/`, copies the app in and runs the catalog's own
 `ci.py`: render, deploy, wait for every container to be healthy, tear down. It also
-re-vendors `templates/library` and refreshes `lib_version_hash`, `capabilities` inputs and
-`item.yaml`, which are copied back here. Needs Docker on x86-64 Linux; the catalog's
+re-vendors `templates/library` and refreshes `lib_version_hash` and `item.yaml`, which are
+copied back here. `capabilities` and `run_as_context` in `app.yaml` were written by hand in
+the format of the catalog's `generate_metadata.py`; run that script in the fork before the
+pull request. Needs Docker on x86-64 Linux; the catalog's
 validation image is amd64-only and its file writes fail under emulation on Apple Silicon.
 The GitHub workflow runs the same script for both files in `templates/test_values`.
 
