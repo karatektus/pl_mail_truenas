@@ -1,6 +1,6 @@
 annotations:
   min_scale_version: 24.10.2.2
-app_version: 0.2.54
+app_version: 0.2.55
 capabilities:
 - description: Database, Worker, plMail are able to change file ownership arbitrarily
   name: CHOWN
