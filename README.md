@@ -44,6 +44,11 @@ Additional environment variables go to the web and the worker container. They ma
 replace `APP_PUBLIC_URL`, `MERCURE_PUBLIC_URL`, `TRUSTED_PROXIES`, `VAPID_*`,
 `GOOGLE_OAUTH_*`, `GMAIL_PUBSUB_*`, `MICROSOFT_OAUTH_*` and `MAILER_DSN`.
 
+`MERCURE_COOKIE_NAME` defaults to `mercure_access_token` here. plMail's own default,
+`__Secure-mercure_access_token`, is dropped by browsers on plain HTTP, and a TrueNAS app
+is first opened on `http://ip:port`, where live updates would never start. An install
+that is only ever reached over HTTPS can set the prefixed name back.
+
 ## Differences from truenas.compose.yaml
 
 Same four services: `secrets-init`, the web container (`plmail`), `worker` (queues,
@@ -52,6 +57,7 @@ scheduler, IMAP supervisor and the Mercure hub, reachable as `mercure`) and `dat
 - Images are referenced by tag and digest (`ix_values.yaml`); the catalog does not use
   `latest`. Renovate moves them forward in `truenas/apps`.
 - Containers drop all capabilities and get back only what they use (see `app.yaml`).
+- The live-update cookie has no `__Secure-` prefix, so it works on plain HTTP (see above).
 - The Postgres directory is chowned to uid 70, the `postgres` user of the alpine image.
 
 ## Testing

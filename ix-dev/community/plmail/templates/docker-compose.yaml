@@ -48,9 +48,14 @@ exec generate-secrets
 {# Defaults the user may replace through Additional Environment Variables.
    Blank is deliberate: it is what makes plMail generate the value, or ask
    for it on the setup screen, instead of using the image's placeholder. #}
+{# The cookie name is the exception to "blank": plMail's default carries the
+   __Secure- prefix, which a browser drops unless it arrived over HTTPS, and
+   an app here is opened on http://ip:port first. Without the prefix the
+   cookie works on both. #}
 {% set overridable_envs = {
   "APP_PUBLIC_URL": "",
   "MERCURE_PUBLIC_URL": "",
+  "MERCURE_COOKIE_NAME": "mercure_access_token",
   "TRUSTED_PROXIES": "",
   "VAPID_SUBJECT": "mailto:you@yourdomain.com",
   "VAPID_PUBLIC_KEY": "",
