@@ -32,3 +32,14 @@ jobs:
             tail -n 20 test.log | annotate "End of the test log" || true
           fi
           exit "$status"
+      # The tooling regenerates the vendored library, the hashes and the
+      # metadata in app.yaml. A difference means what is committed is not what
+      # the catalogue would publish.
+      - name: Committed files match what the tooling generates
+        shell: bash
+        run: |
+          if ! git diff --exit-code -- ix-dev > generated.diff; then
+            sed -e 's/%/%25/g' generated.diff | cut -c1-300 | head -n 120 \
+              | awk 'BEGIN { printf "::error title=Generated files differ::" } { printf "%s%%0A", $0 } END { print "" }'
+            exit 1
+          fi

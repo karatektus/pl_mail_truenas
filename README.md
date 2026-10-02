@@ -76,5 +76,5 @@ In `ix-dev/community/plmail`: set `app_version` in `app.yaml`, the tag and diges
 `image` in `ix_values.yaml`, and raise `version` in `app.yaml`. The digest:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.53
+docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.54
 ```

@@ -8,8 +8,9 @@
 #
 # The app is copied into a checkout of truenas/apps (APPS_DIR, cloned on first
 # use) because ci.py only works from inside that repository. What the tooling
-# generates there (templates/library, lib_version_hash, item.yaml) is copied
-# back, since those files ship with the app.
+# generates there (templates/library, lib_version_hash, item.yaml, and the
+# capabilities and run_as_context in app.yaml) is copied back, since those
+# files ship with the app.
 #
 # Needs only Docker: ci.py itself runs in a container, so no host Python.
 set -euo pipefail
@@ -36,16 +37,27 @@ cp -R "$ROOT/ix-dev/$TRAIN/$APP" "$APPS_DIR/ix-dev/$TRAIN/$APP"
 
 # Mounted at the same path as on the host: ci.py starts sibling containers
 # through the socket and hands them paths under its working directory.
-status=0
-docker run --rm -i \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v "$APPS_DIR:$APPS_DIR" -w "$APPS_DIR" \
-	"$TOOLS_IMAGE" \
-	python3 .github/scripts/ci.py --app "$APP" --train "$TRAIN" --test-file "$TEST_FILE" "$@" || status=$?
+tools() {
+	docker run --rm -i \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$APPS_DIR:$APPS_DIR" -w "$APPS_DIR" \
+		"$TOOLS_IMAGE" "$@"
+}
 
-rm -rf "$APPS_DIR/ix-dev/$TRAIN/$APP/templates/rendered"
+status=0
+tools python3 .github/scripts/ci.py --app "$APP" --train "$TRAIN" --test-file "$TEST_FILE" "$@" || status=$?
+
+# capabilities and run_as_context in app.yaml, from what the template renders.
+if [ "$status" -eq 0 ]; then
+	tools python3 .github/scripts/generate_metadata.py --app "$APP" --train "$TRAIN" || status=$?
+fi
+
+# The tooling writes as root. Cleaned up and handed back from inside a
+# container, because on a CI runner the invoking user may not remove those
+# files: the first runs here passed every test and then failed on this rm.
+tools sh -c "rm -rf 'ix-dev/$TRAIN/$APP/templates/rendered' && find 'ix-dev/$TRAIN/$APP' -name __pycache__ -type d -prune -exec rm -rf {} + && chown -R $(id -u):$(id -g) 'ix-dev/$TRAIN/$APP'"
+
 rm -rf "$ROOT/ix-dev/$TRAIN/$APP"
 cp -R "$APPS_DIR/ix-dev/$TRAIN/$APP" "$ROOT/ix-dev/$TRAIN/$APP"
-find "$ROOT/ix-dev" -name __pycache__ -type d -prune -exec rm -rf {} +
 
 exit "$status"

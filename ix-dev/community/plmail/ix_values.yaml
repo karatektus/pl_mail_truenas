@@ -1,7 +1,7 @@
 images:
   image:
     repository: ghcr.io/karatektus/pl_mail
-    tag: "0.2.53@sha256:278e28cd7c5e0d94ea9092bd2050392103d0a53d8e7cd0e285e818b8474b42f2"
+    tag: "0.2.54@sha256:277d7265fa3477e8bb3b524b67346ea3540065b5a3f244ce54df7211a6cd9a9b"
   postgres_image:
     repository: postgres
     tag: "18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873"
