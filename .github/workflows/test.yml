@@ -28,7 +28,7 @@ jobs:
                 | awk -v title="$1" 'BEGIN { printf "::error title=%s::", title } { printf "%s%%0A", $0 } END { print "" }'
             }
             grep -a -n -E 'Exit code|✅|❌|[Ff]ailed|Permission denied|^rm:|^cp:|No such file|Traceback|Error:|unhealthy|Containers started' test.log \
-              | grep -a -v -E '^[0-9]+:[a-z-]+-1 +\|' | tail -n 25 | annotate "Telling lines"
-            tail -n 20 test.log | annotate "End of the test log"
+              | grep -a -v -E '^[0-9]+:[a-z-]+-1 +\|' | tail -n 25 | annotate "Telling lines" || true
+            tail -n 20 test.log | annotate "End of the test log" || true
           fi
           exit "$status"
