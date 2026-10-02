@@ -14,9 +14,12 @@ the move from Kubernetes to Docker. So there is no source to add: plMail shows u
 To submit it:
 
 1. Fork `truenas/apps` and copy `ix-dev/community/plmail` into the fork.
-2. Open a pull request. Attach the icon and screenshots: reviewers upload them to
-   the TrueNAS CDN and hand back the URLs that replace the GitHub ones in `app.yaml`
-   and `item.yaml`.
+2. Open a pull request. Attach the icon and screenshots: `app.yaml` and `item.yaml`
+   already name them under `media.sys.truenas.net/apps/plmail/`, which the catalogue's
+   tooling insists on, and reviewers upload the files there. Until they do, those
+   URLs answer nothing. The files to attach are in the plMail repository:
+   `public/icons/icon-512.png`, and `inbox.png`, `thread.png`, `compose.png` and
+   `calendar.png` from `docs/screenshots/`, in that order.
 3. After the merge, Renovate in that repository bumps the image tags on each plMail
    release. Nothing has to be released from here.
 

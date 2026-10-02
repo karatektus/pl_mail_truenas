@@ -22,7 +22,7 @@ description: Self-hosted mail client with a calendar beside it. Reads the IMAP, 
   Outlook mailboxes you already have in one inbox.
 home: https://github.com/karatektus/pl_mail
 host_mounts: []
-icon: https://raw.githubusercontent.com/karatektus/pl_mail/main/public/icons/icon-512.png
+icon: https://media.sys.truenas.net/apps/plmail/icons/icon.png
 keywords:
 - mail
 - email
@@ -53,11 +53,12 @@ run_as_context:
   uid: 0
   user_name: Host user is [root]
 screenshots:
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/inbox.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/thread.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/compose.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/calendar.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot1.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot2.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot3.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot4.png
 sources:
+- https://apps.truenas.com/catalog/plmail_community/
 - https://github.com/karatektus/pl_mail
 title: plMail
 train: community

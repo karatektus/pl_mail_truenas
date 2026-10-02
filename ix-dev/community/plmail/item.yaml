@@ -1,11 +1,11 @@
 categories:
 - productivity
-icon_url: https://raw.githubusercontent.com/karatektus/pl_mail/main/public/icons/icon-512.png
+icon_url: https://media.sys.truenas.net/apps/plmail/icons/icon.png
 screenshots:
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/inbox.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/thread.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/compose.png
-- https://raw.githubusercontent.com/karatektus/pl_mail/main/docs/screenshots/calendar.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot1.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot2.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot3.png
+- https://media.sys.truenas.net/apps/plmail/screenshots/screenshot4.png
 tags:
 - mail
 - email
