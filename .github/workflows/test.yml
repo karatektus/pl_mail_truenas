@@ -20,9 +20,15 @@ jobs:
           status=0
           TEST_FILE=${{ matrix.values }} scripts/test.sh 2>&1 | tee test.log || status=$?
           if [ "$status" -ne 0 ]; then
-            # The end of the log as an annotation: those are readable without
-            # signing in, the log itself is not.
-            tail -n 120 test.log | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' \
-              | awk 'BEGIN { printf "::error title=End of the test log::" } { printf "%s%%0A", $0 } END { print "" }'
+            # The telling lines and the end of the log as annotations: those
+            # are readable without signing in, the log itself is not. Kept
+            # short, because an annotation is cut off after a few kilobytes.
+            annotate() {
+              sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' | cut -c1-300 \
+                | awk -v title="$1" 'BEGIN { printf "::error title=%s::", title } { printf "%s%%0A", $0 } END { print "" }'
+            }
+            grep -a -n -E 'Exit code|✅|❌|[Ff]ailed|Permission denied|^rm:|^cp:|No such file|Traceback|Error:|unhealthy|Containers started' test.log \
+              | grep -a -v -E '^[0-9]+:[a-z-]+-1 +\|' | tail -n 25 | annotate "Telling lines"
+            tail -n 20 test.log | annotate "End of the test log"
           fi
           exit "$status"
