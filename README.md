@@ -30,35 +30,39 @@ Until then, `truenas.compose.yaml` in the plMail repository remains the way to i
 
 | Setting | Default | |
 |---|---|---|
-| **plMail Data Storage** | ixVolume | Database, attachments, raw mail, uploads and the generated secrets all live in it. Nothing has to be entered. To keep it in a dataset of your own, switch to Host Path; that one path is then the only required field. |
+| **Database Password** | none, required | The one field that has to be filled in. The catalogue's Postgres helper needs it when the app is rendered. No spaces. |
+| plMail Data Storage | ixVolume | Attachments, raw mail, uploads and the generated secrets, including the key that encrypts stored mailbox passwords. |
+| Postgres Data Storage | ixVolume | The database. |
+| Additional Storage | none | Extra mounts into the `plmail` and `worker` containers. |
 | WebUI Port | `30504` | Any port, or bind mode *None* when using a dedicated IP. |
 | Networks | none | Join the `plmail` container to an existing macvlan/ipvlan network and set its IPv4 address to give plMail its own IP. It then answers on port 80 of that address. |
-| Timezone, Additional Environment Variables, Labels, Resources | | Standard catalog fields. Nothing needs filling in. |
+| Timezone, Postgres Image, Additional Environment Variables, Labels, Resources | | Standard catalogue fields. Nothing needs changing. |
 
-Secrets are not asked for. `secrets-init` generates them into `<data>/secrets` on first
-start, as in `truenas.compose.yaml`. The directory layout is the same, so
-pointing the data storage at the directory of an install made from that file should adopt
-it; that path has not been tested.
-
-Additional environment variables go to the web and the worker container. They may
-replace `APP_PUBLIC_URL`, `MERCURE_PUBLIC_URL`, `TRUSTED_PROXIES`, `VAPID_*`,
-`GOOGLE_OAUTH_*`, `GMAIL_PUBSUB_*`, `MICROSOFT_OAUTH_*` and `MAILER_DSN`.
-
-`MERCURE_COOKIE_NAME` defaults to `mercure_access_token` here. plMail's own default,
-`__Secure-mercure_access_token`, is dropped by browsers on plain HTTP, and a TrueNAS app
-is first opened on `http://ip:port`, where live updates would never start. An install
-that is only ever reached over HTTPS can set the prefixed name back.
+plMail's own secrets are not asked for. Its entrypoint generates them into `<data>/secrets`
+on first start.
 
 ## Differences from truenas.compose.yaml
 
-Same four services: `secrets-init`, the web container (`plmail`), `worker` (queues,
-scheduler, IMAP supervisor and the Mercure hub, reachable as `mercure`) and `database`.
+The catalogue has rules of its own, and the app follows them rather than the compose file:
 
-- Images are referenced by tag and digest (`ix_values.yaml`); the catalog does not use
-  `latest`. Renovate moves them forward in `truenas/apps`.
-- Containers drop all capabilities and get back only what they use (see `app.yaml`).
-- The live-update cookie has no `__Secure-` prefix, so it works on plain HTTP (see above).
-- The Postgres directory is chowned to uid 70, the `postgres` user of the alpine image.
+- **Postgres comes from the catalogue's helper**: `postgres:18-trixie` as uid 999 in a
+  storage of its own, with the password from the form. The compose file runs
+  `postgres:18-alpine` inside the one data directory with a generated password. The two
+  layouts are not interchangeable: moving an install from one to the other goes through
+  plMail's backup and restore, not through pointing at the old directory.
+- **No `secrets-init` container.** The web and worker containers generate the secrets
+  themselves, which they have always been able to do.
+- **Containers are `plmail`, `worker`, `postgres`** plus the helper's short-lived
+  `permissions` and `postgres_upgrade`. The hub runs in `worker` and is reached by that
+  name (`MERCURE_URL`, `MERCURE_UPSTREAM`), not through a `mercure` alias.
+- **Only what the template owns is set**: paths, the database URL and where the hub is.
+  Everything else is plMail's own default or an additional environment variable.
+- Images are referenced by tag and digest; Renovate moves them forward in `truenas/apps`.
+- `plmail` and `worker` run as root with all capabilities dropped except `DAC_OVERRIDE`
+  and `NET_BIND_SERVICE`.
+
+Needs plMail 0.2.56 or later, which is where the image stopped depending on its compose
+file for the cookie name, an absolute storage path and the hub's address.
 
 ## Testing
 
@@ -69,9 +73,8 @@ scripts/test.sh
 Clones `truenas/apps` into `.truenas-apps/`, copies the app in and runs the catalog's own
 `ci.py`: render, deploy, wait for every container to be healthy, tear down. It also
 re-vendors `templates/library` and refreshes `lib_version_hash` and `item.yaml`, which are
-copied back here. `capabilities` and `run_as_context` in `app.yaml` were written by hand in
-the format of the catalog's `generate_metadata.py`; run that script in the fork before the
-pull request. Needs Docker on x86-64 Linux; the catalog's
+copied back here, and runs the catalogue's `generate_metadata.py`, which writes
+`capabilities` and `run_as_context` in `app.yaml`. Needs Docker on x86-64 Linux; the catalog's
 validation image is amd64-only and its file writes fail under emulation on Apple Silicon.
 The GitHub workflow runs the same script for both files in `templates/test_values`.
 
@@ -85,5 +88,5 @@ In `ix-dev/community/plmail`: set `app_version` in `app.yaml`, the tag and diges
 `image` in `ix_values.yaml`, and raise `version` in `app.yaml`. The digest:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.55
+docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.56
 ```

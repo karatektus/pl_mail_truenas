@@ -1,20 +1,11 @@
 annotations:
   min_scale_version: 24.10.2.2
-app_version: 0.2.55
+app_version: 0.2.56
 capabilities:
-- description: Database, Worker, plMail are able to change file ownership arbitrarily
-  name: CHOWN
-- description: Database, Worker, plMail are able to bypass file permission checks
+- description: Worker, plMail are able to bypass file permission checks
   name: DAC_OVERRIDE
-- description: Database, Worker, plMail are able to bypass permission checks for file
-    operations
-  name: FOWNER
 - description: Worker, plMail are able to bind to privileged ports (< 1024)
   name: NET_BIND_SERVICE
-- description: Database is able to change group ID of processes
-  name: SETGID
-- description: Database is able to change user ID of processes
-  name: SETUID
 categories:
 - productivity
 changelog_url: https://github.com/karatektus/pl_mail/blob/main/CHANGELOG.md
@@ -38,16 +29,16 @@ maintainers:
   url: https://www.truenas.com/
 name: plmail
 run_as_context:
-- description: Container [database] runs as root user and group.
-  gid: 0
-  group_name: Host group is [root]
-  uid: 0
-  user_name: Host user is [root]
 - description: Container [plmail] runs as root user and group.
   gid: 0
   group_name: Host group is [root]
   uid: 0
   user_name: Host user is [root]
+- description: Container [postgres] runs as non-root user and group.
+  gid: 999
+  group_name: Host group is [docker]
+  uid: 999
+  user_name: Host user is [netdata]
 - description: Container [worker] runs as root user and group.
   gid: 0
   group_name: Host group is [root]
