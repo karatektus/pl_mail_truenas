@@ -35,7 +35,7 @@ Until then, `truenas.compose.yaml` in the plMail repository remains the way to i
 | Postgres Data Storage | ixVolume | The database. |
 | Additional Storage | none | Extra mounts into the `plmail` and `worker` containers. |
 | User and Group | 568 / 568 | The user `plmail` and `worker` run as. |
-| WebUI Port | `30504` | Any port, or bind mode *None* when using a dedicated IP. |
+| WebUI Port | `30519` | Any port, or bind mode *None* when using a dedicated IP. |
 | Networks | none | Join the `plmail` container to an existing macvlan/ipvlan network and set its IPv4 address to give plMail its own IP. It then answers on port 80 of that address. |
 | Timezone, Postgres Image, Additional Environment Variables, Labels, Resources | | Standard catalogue fields. Nothing needs changing. |
 
