@@ -15,6 +15,10 @@ plmail:
     - name: VAPID_SUBJECT
       value: mailto:admin@example.com
 
+run_as:
+  user: 1000
+  group: 1000
+
 network:
   web_port:
     bind_mode: published
@@ -22,18 +26,19 @@ network:
   networks: []
 
 ix_volumes:
-  extra: /opt/tests/mnt/plmail/hostpath-extra
+  data: /opt/tests/mnt/plmail/custom-data
+  extra: /opt/tests/mnt/plmail/custom-extra
 
 storage:
   data:
-    type: host_path
-    host_path_config:
-      path: /opt/tests/mnt/plmail/hostpath
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: data
       create_host_path: true
   postgres_data:
     type: host_path
     host_path_config:
-      path: /opt/tests/mnt/plmail/hostpath-postgres
+      path: /opt/tests/mnt/plmail/custom-postgres
       create_host_path: true
       auto_permissions: true
   additional_storage:

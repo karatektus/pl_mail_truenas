@@ -34,6 +34,7 @@ Until then, `truenas.compose.yaml` in the plMail repository remains the way to i
 | plMail Data Storage | ixVolume | Attachments, raw mail, uploads and the generated secrets, including the key that encrypts stored mailbox passwords. |
 | Postgres Data Storage | ixVolume | The database. |
 | Additional Storage | none | Extra mounts into the `plmail` and `worker` containers. |
+| User and Group | 568 / 568 | The user `plmail` and `worker` run as. |
 | WebUI Port | `30504` | Any port, or bind mode *None* when using a dedicated IP. |
 | Networks | none | Join the `plmail` container to an existing macvlan/ipvlan network and set its IPv4 address to give plMail its own IP. It then answers on port 80 of that address. |
 | Timezone, Postgres Image, Additional Environment Variables, Labels, Resources | | Standard catalogue fields. Nothing needs changing. |
@@ -58,11 +59,12 @@ The catalogue has rules of its own, and the app follows them rather than the com
 - **Only what the template owns is set**: paths, the database URL and where the hub is.
   Everything else is plMail's own default or an additional environment variable.
 - Images are referenced by tag and digest; Renovate moves them forward in `truenas/apps`.
-- `plmail` and `worker` run as root with all capabilities dropped except `DAC_OVERRIDE`
-  and `NET_BIND_SERVICE`.
+- `plmail` and `worker` run as the user from the form, 568 by default, with every
+  capability dropped. The compose file runs them as root.
 
-Needs plMail 0.2.56 or later, which is where the image stopped depending on its compose
-file for the cookie name, an absolute storage path and the hub's address.
+Needs plMail 0.2.57 or later: 0.2.56 is where the image stopped depending on its compose
+file for the cookie name, an absolute storage path and the hub's address, and 0.2.57 is
+where it stopped needing root.
 
 ## Testing
 
@@ -79,7 +81,7 @@ validation image is amd64-only and its file writes fail under emulation on Apple
 The GitHub workflow runs the same script for both files in `templates/test_values`.
 
 ```bash
-TEST_FILE=hostpath-values.yaml scripts/test.sh --wait=true
+TEST_FILE=custom-values.yaml scripts/test.sh --wait=true
 ```
 
 ## Releasing a new plMail version (before the upstream merge)
@@ -88,5 +90,5 @@ In `ix-dev/community/plmail`: set `app_version` in `app.yaml`, the tag and diges
 `image` in `ix_values.yaml`, and raise `version` in `app.yaml`. The digest:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.56
+docker buildx imagetools inspect ghcr.io/karatektus/pl_mail:0.2.57
 ```

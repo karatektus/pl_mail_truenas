@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        values: [basic-values.yaml, hostpath-values.yaml]
+        values: [basic-values.yaml, custom-values.yaml]
     steps:
       - uses: actions/checkout@v4
       - name: Render, deploy and wait for healthy
